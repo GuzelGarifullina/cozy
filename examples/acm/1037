@@ -1,0 +1,9 @@
+fields  blockNumber : int, time : int
+
+query SearchForAllocation (t: int)
+    t >= time
+    sort blockNumber
+
+query FindBlock (n : int)
+    n == blockNumber
+costmodel 10371.cs

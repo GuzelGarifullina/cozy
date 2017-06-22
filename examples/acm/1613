@@ -1,0 +1,5 @@
+fields  id : int, people : int
+query isFound (l: int, r : int, x : int)
+    assume l <= r
+    id >= l and id <= r and x == people
+costmodel 1613.cs
