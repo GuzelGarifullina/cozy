@@ -58,17 +58,11 @@ class CppCodeGenerator(codegen.CodeGenerator):
     def __str__(self):
         return "CppCodeGenerator"
 
-    def map_type(self, kt, vt):
-        return "std::unordered_map < {}, {} >".format(kt.gen_type(self), vt.gen_type(self))
+    def min(self, t, e1, e2):
+        return "std::min({}, {})".format(e1, e2)
 
-    def map_handle_type(self, kt, vt):
-        return "{}::iterator".format(self.map_type(kt, vt))
-
-    def bool_type(self):
-        return "bool";
-
-    def int_type(self):
-        return "int";
+    def max(self, t, e1, e2):
+        return "std::max({}, {})".format(e1, e2)
 
     def ref_type(self, ty):
         return ty.gen_type(self) if type(ty) is RecordType else "{}&".format(ty.gen_type(self))
@@ -81,6 +75,12 @@ class CppCodeGenerator(codegen.CodeGenerator):
 
     def deref(self, x):
         return "(*({}))".format(x)
+
+    def map_type(self, kt, vt):
+        return "std::unordered_map < {}, {} >".format(kt.gen_type(self), vt.gen_type(self))
+
+    def map_handle_type(self, kt, vt):
+        return "{}::iterator".format(self.map_type(kt, vt))
 
     def stack_type(self, ty):
         return "mystk < {} >".format(ty.gen_type(self))
@@ -179,9 +179,6 @@ class CppCodeGenerator(codegen.CodeGenerator):
         return "std::copy({src}.begin() + {src_start}, {src}.begin() + {src_start} + {amt}, {dst}.begin() + {dst_start});\n".format(
             src=asrc, dst=adst, src_start=src_start, dst_start=dst_start, amt=amt)
 
-    def native_type(self, t):
-        return t
-
     def record_type(self):
         return "{}*".format(self.cpp_record_class)
 
@@ -192,20 +189,11 @@ class CppCodeGenerator(codegen.CodeGenerator):
     def abs(self, e):
         return "std::abs({})".format(e)
 
-    def min(self, t, e1, e2):
-        return "std::min({}, {})".format(e1, e2)
-
-    def max(self, t, e1, e2):
-        return "std::max({}, {})".format(e1, e2)
-
     def init_new(self, target, ty):
         return self.set(target, "{}()".format(ty.gen_type(self)))
 
     def null_value(self):
         return "nullptr"
-
-    def data_structure_size(self):
-        return "my_size" # massive hack
 
     def hash1(self, ty, value):
         return "static_cast<int>(std::hash< {} >()({}))".format(ty.gen_type(self), value)

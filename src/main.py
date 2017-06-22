@@ -20,12 +20,16 @@ from parse import parseQuery
 import cost_model
 from codegen import enumerate_impls
 from codegen_java import JavaCodeGenerator
+from codegen_csharp import CSharpCodeGenerator
 from codegen_cpp import CppCodeGenerator
 from codegen_js import JsCodeGenerator
 
 def enumerate_code_generators(args):
     if args.java is not None:
         yield JavaCodeGenerator(identity_equals_types=args.java_id_equality)
+    elif args.csharp is not None:
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        yield CSharpCodeGenerator(identity_equals_types=args.csharp_id_equality)
     elif args.cpp_header is not None or args.cpp is not None:
         yield CppCodeGenerator(with_qt=args.with_qt)
     elif args.js is not None:
@@ -49,7 +53,6 @@ def pick_best_impls(fields, queries, cost_model_file, code_generators, args):
                 bestImpls = impls
                 bestCost  = cost
                 bestCG    = cg
-
     return bestImpls, bestCG, bestCost
 
 def highlevel_synthesis(all_input, fields, assumptions, query, enable_cache, timeout):
@@ -76,7 +79,6 @@ def highlevel_synthesis(all_input, fields, assumptions, query, enable_cache, tim
     print("Query {}: {}".format(query.name, query.pred))
     for a in local_assumptions:
         print("  --> assuming:", a)
-
     query.bestPlans = set(sc.synthesizePlansByEnumeration(query.pred, sort_field=query.sort_field, timeout=timeout))
 
     try:
@@ -101,6 +103,13 @@ if __name__ == '__main__':
     java_opts.add_argument("--java-class", metavar="Name", default="DataStructure", help="Java class name for generated structure")
     java_opts.add_argument("--java-extra-classpath", metavar="PATH", default="", help="Path to search for auxiliary Java classes")
     java_opts.add_argument("--java-id-equality", metavar="ClassName", action="append", help="By default, Cozy uses .equals() to compare object types. This flag makes Cozy use reference equality (==) for the given type instead. You may provide this flag multiple times.")
+
+    csharp_opts = parser.add_argument_group("C# codegen")
+    csharp_opts.add_argument("--csharp", metavar="FILE.cs", default=None, help="Output file for C# classes, use '-' for stdout")
+    csharp_opts.add_argument("--csharp-namespace", metavar="Company.Product.Feature.Subnamespace", default=None, help="C# namespace for generated structure")
+    csharp_opts.add_argument("--csharp-class", metavar="Name", default="DataStructure", help="C# class name for generated structure")
+    csharp_opts.add_argument("--csharp-extra-classpath", metavar="PATH", default="", help="Path to search for auxiliary C# classes")
+    csharp_opts.add_argument("--csharp-id-equality", metavar="ClassName", action="append", help="By default, Cozy uses .equals() to compare object types. This flag makes Cozy use reference equality (==) for the given type instead. You may provide this flag multiple times.")
 
     cpp_opts = parser.add_argument_group("C++ codegen")
     cpp_opts.add_argument("--cpp", metavar="FILE.cpp", default=None, help="Output file for C++ code, use '-' for stdout")

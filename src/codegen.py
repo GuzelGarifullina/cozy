@@ -90,24 +90,15 @@ def _enumerate_impls(fields, queries, i, impls):
 
 
 class CodeGenerator(object):
+    
+    def bool_type(self):
+        return "bool"
 
-    def map_type(self, kt, vt):
-        raise NotImplementedError()
-
-    def map_handle_type(self, kt, vt):
-        raise NotImplementedError()
-
-    def stack_type(self, t):
-        raise NotImplementedError()
+    def int_type(self):
+        return "int"
 
     def ref_type(self, ty):
         return ty.gen_type(self)
-
-    def bool_type(self):
-        return "boolean";
-
-    def int_type(self):
-        return "int";
 
     def ptr_type(self, t):
         return t.gen_type(self)
@@ -118,45 +109,11 @@ class CodeGenerator(object):
     def deref(self, x):
         return x
 
-    def vector_type(self, ty, n):
+    def map_type(self, kt, vt):
         raise NotImplementedError()
 
-    def array_type(self, ty):
+    def map_handle_type(self, kt, vt):
         raise NotImplementedError()
-
-    def new_array(self, ty, count):
-        raise NotImplementedError()
-
-    def array_get(self, a, n):
-        raise NotImplementedError()
-
-    def array_set(self, a, n, v):
-        raise NotImplementedError()
-
-    def array_size(self, a):
-        raise NotImplementedError()
-
-    def array_copy(self, ty, asrc, adst, src_start=0, dst_start=0, amt=None):
-        raise NotImplementedError()
-
-    def data_structure_size(self):
-        raise NotImplementedError()
-
-    def alloc(self, ty, args):
-        raise NotImplementedError()
-
-    def free(self, ty, x):
-        raise NotImplementedError()
-
-    def initialize(self, ty, lval):
-        """Make lval into a usable object"""
-        return ""
-
-    def min(self, ty, x, y):
-        return self.ternary(self.lt(ty, x, y), x, y)
-
-    def max(self, ty, x, y):
-        return self.ternary(self.lt(ty, x, y), y, x)
 
     def new_map(self, kt, vt):
         raise NotImplementedError()
@@ -179,6 +136,9 @@ class CodeGenerator(object):
     def for_each_map_entry(self, m, keyType, valType, body):
         raise NotImplementedError()
 
+    def stack_type(self, t):
+        raise NotImplementedError()
+
     def new_stack(self, t):
         raise NotImplementedError()
 
@@ -195,6 +155,27 @@ class CodeGenerator(object):
         raise NotImplementedError()
 
     def stack_peek(self, stk):
+        raise NotImplementedError()
+
+    def array_type(self, ty):
+        raise NotImplementedError()
+
+    def new_array(self, ty, count):
+        raise NotImplementedError()
+
+    def array_get(self, a, n):
+        raise NotImplementedError()
+
+    def array_set(self, a, n, v):
+        raise NotImplementedError()
+
+    def array_size(self, a):
+        raise NotImplementedError()
+
+    def array_copy(self, ty, asrc, adst, src_start=0, dst_start=0, amt=None):
+        raise NotImplementedError()
+    
+    def vector_type(self, ty, n):
         raise NotImplementedError()
 
     def new_vector(self, ty, n):
@@ -215,6 +196,25 @@ class CodeGenerator(object):
     def record_type(self):
         return "Record"
 
+    def data_structure_size(self):
+        return "my_size" # massive hack
+
+    def alloc(self, ty, args):
+        raise NotImplementedError()
+
+    def free(self, ty, x):
+        raise NotImplementedError()
+
+    def initialize(self, ty, lval):
+        """Make lval into a usable object"""
+        return ""
+
+    def init_new(self, target, ty):
+        raise NotImplementedError()
+    
+    def null_value(self):
+        return "null"
+#-------------------------------------------------------------------------------
     def predicate(self, fields, qvars, pred, target, remap=None):
         if remap is None:
             remap = {}
@@ -245,21 +245,24 @@ class CodeGenerator(object):
         else:
             raise Exception("cannot handle {}".format(pred))
 
-    def not_true(self, e):
-        return "!({})".format(e)
-
     def is_null(self, e):
         return "({}) == {}".format(e, self.null_value())
 
     def ternary(self, cond, v1, v2):
         return "({}) ? ({}) : ({})".format(cond, v1, v2)
 
+    def not_true(self, e):
+        return "!({})".format(e)
+
     def same(self, e1, e2):
         return "({}) == ({})".format(e1, e2)
 
+    def not_same(self, e1, e2):
+        return "({}) != ({})".format(e1, e2)
+
     def eq(self, ty, e1, e2):
         return self.same(e1, e2)
-
+    
     def ne(self, ty, e1, e2):
         return self.not_true(self.eq(ty, e1, e2))
 
@@ -292,9 +295,21 @@ class CodeGenerator(object):
 
     def mod(self, e1, e2):
         return "({}) % ({})".format(e1, e2)
+    
+    def min(self, ty, x, y):
+        return self.ternary(self.lt(ty, x, y), x, y)
+
+    def max(self, ty, x, y):
+        return self.ternary(self.lt(ty, x, y), y, x)
 
     def abs(self, e):
         raise NotImplementedError()
+
+    def both(self, e1, e2):
+        return "({}) && ({})".format(e1, e2)
+
+    def either(self, e1, e2):
+        return "({}) || ({})".format(e1, e2)
 
     def bit_xor(self, e1, e2):
         return "({}) ^ ({})".format(e1, e2)
@@ -306,12 +321,6 @@ class CodeGenerator(object):
     def bit_ashr(self, e1, e2):
         """arithmetic right shift (sign-extend)"""
         return "({}) >> ({})".format(e1, e2)
-
-    def init_new(self, target, ty):
-        raise NotImplementedError()
-
-    def null_value(self):
-        return "null"
 
     def true_value(self):
         return "true";
@@ -342,12 +351,6 @@ class CodeGenerator(object):
 
     def hash1(self, ty, value):
         raise NotImplementedError()
-
-    def both(self, e1, e2):
-        return "({}) && ({})".format(e1, e2)
-
-    def either(self, e1, e2):
-        return "({}) || ({})".format(e1, e2)
 
     def decl(self, v, ty, e=None):
         if e is not None:
@@ -389,9 +392,6 @@ class CodeGenerator(object):
 
     def assert_true(self, e):
         return "assert({});\n".format(e)
-
-    def write(self, fields, queries, java_package=None, java_class="DataStructure", java="-", **kwargs):
-        raise NotImplementedError()
 
     def supports_cost_model_file(self, f):
         raise NotImplementedError()
